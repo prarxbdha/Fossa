@@ -1,7 +1,10 @@
-# Tauri + React + Typescript
+# Fossa
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A Rust + TypeScript web browser built with Tauri and React.
 
-## Recommended IDE Setup
+- `src/` — React frontend
+- `src-tauri/` — Tauri desktop bridge
+- `crates/fossa-engine/` — pure Rust browser engine
+- `fixtures/` — sample pages for engine tests
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+See `docs/architecture.md` and `docs/milestones.md` for details.

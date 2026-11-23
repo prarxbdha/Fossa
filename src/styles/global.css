@@ -1,0 +1,52 @@
+:root {
+  color-scheme: dark;
+
+  /* Chrome surfaces */
+  --chrome-bg: #17191d;
+  --surface: #202329;
+  --interactive: #30343b;
+  --content-bg: #1a1c20;
+
+  /* Text */
+  --text: #e7e9ed;
+  --text-muted: #a0a6b0;
+
+  /* Lines and focus */
+  --border: #343840;
+  --focus: #7a9fd4;
+
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 13px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--chrome-bg);
+  color: var(--text);
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}

@@ -1088,12 +1088,17 @@ dependencies = [
 name = "fossa"
 version = "0.1.0"
 dependencies = [
+ "fossa-engine",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
 ]
+
+[[package]]
+name = "fossa-engine"
+version = "0.1.0"
 
 [[package]]
 name = "futures-channel"

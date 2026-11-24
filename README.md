@@ -1,6 +1,6 @@
 # Fossa
 
-A Rust + TypeScript web browser built with Tauri and React.
+A simple, minimalist and open source browser for people who enjoy customization and UX efficiency.
 
 - `src/` — React frontend
 - `src-tauri/` — Tauri desktop bridge

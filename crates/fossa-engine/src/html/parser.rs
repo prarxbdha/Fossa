@@ -1,5 +1,5 @@
 use crate::dom::node::Node;
-use crate::html::tokenizer::{Token, tokenize};
+use crate::html::tokenizer::{Attribute, Token, tokenize};
 
 const VOID_TAGS: &[&str] = &[
     "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source",
@@ -33,26 +33,32 @@ fn parse_children(tokens: &[Token], position: &mut usize, parent: &str) -> Vec<N
                     return children;
                 }
             }
-            Token::StartTag(name) => {
+            Token::StartTag {
+                name,
+                attributes,
+                self_closing,
+            } => {
                 let tag = name.clone();
+                let attributes = attribute_pairs(attributes);
+                let self_closing = *self_closing;
                 *position += 1;
 
-                if VOID_TAGS.contains(&tag.as_str()) {
+                if VOID_TAGS.contains(&tag.as_str()) || self_closing {
                     children.push(Node::Element {
                         name: tag,
-                        attributes: Vec::new(),
+                        attributes,
                         children: Vec::new(),
                     });
                 } else {
                     let nested = parse_children(tokens, position, &tag);
                     children.push(Node::Element {
                         name: tag,
-                        attributes: Vec::new(),
+                        attributes,
                         children: nested,
                     });
                 }
             }
-            Token::Text(text) => {
+            Token::Text(text) | Token::RawText(text) => {
                 let trimmed = text.trim();
                 if !trimmed.is_empty() {
                     children.push(Node::Text(trimmed.to_owned()));
@@ -63,4 +69,11 @@ fn parse_children(tokens: &[Token], position: &mut usize, parent: &str) -> Vec<N
     }
 
     children
+}
+
+fn attribute_pairs(attributes: &[Attribute]) -> Vec<(String, String)> {
+    attributes
+        .iter()
+        .map(|attribute| (attribute.name.clone(), attribute.value.clone()))
+        .collect()
 }

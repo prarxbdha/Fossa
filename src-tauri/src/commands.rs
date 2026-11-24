@@ -109,8 +109,44 @@ pub fn read_fixture(name: String) -> Result<String, String> {
 
 #[tauri::command]
 pub fn render_document(html: String, viewport_width: f32) -> DisplayListDto {
-    let dom = fossa_engine::html::parser::parse(&html);
-    let layout = fossa_engine::layout::engine::layout(&dom, viewport_width);
-    let display_list = fossa_engine::paint::painter::paint(&layout);
-    display_list.into()
+    fossa_engine::render::render_document(&html, viewport_width).into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DisplayListDto;
+    use fossa_engine::paint::display_list::{Color, DisplayItem, DisplayList};
+    use serde_json::json;
+
+    #[test]
+    fn dto_preserves_computed_text_color_and_font_size() {
+        let list = DisplayList {
+            items: vec![DisplayItem::Text {
+                x: 24.0,
+                y: 24.0,
+                width: 80.0,
+                height: 24.0,
+                text: "Styled".to_owned(),
+                color: Color::new(36, 200, 219, 255),
+                font_size: 16.0,
+            }],
+        };
+
+        let value = serde_json::to_value(DisplayListDto::from(list)).expect("dto serializes");
+        assert_eq!(
+            value,
+            json!({
+                "items": [{
+                    "kind": "text",
+                    "x": 24.0,
+                    "y": 24.0,
+                    "width": 80.0,
+                    "height": 24.0,
+                    "text": "Styled",
+                    "color": [36, 200, 219, 255],
+                    "font_size": 16.0,
+                }]
+            })
+        );
+    }
 }

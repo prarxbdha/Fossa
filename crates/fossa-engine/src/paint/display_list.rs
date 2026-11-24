@@ -6,6 +6,25 @@ pub struct Color {
     pub a: u8,
 }
 
+pub const DEFAULT_TEXT_COLOR: Color = Color {
+    r: 231,
+    g: 233,
+    b: 237,
+    a: 255,
+};
+
+impl Default for Color {
+    fn default() -> Self {
+        DEFAULT_TEXT_COLOR
+    }
+}
+
+impl Color {
+    pub const fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self { r, g, b, a }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DisplayItem {
     Rect {

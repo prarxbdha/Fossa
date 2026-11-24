@@ -4,3 +4,4 @@ pub mod html;
 pub mod layout;
 pub mod network;
 pub mod paint;
+pub mod render;

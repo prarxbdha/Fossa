@@ -1,32 +1,40 @@
-use crate::dom::node::Node;
+use crate::css::cascade::{DEFAULT_FONT_SIZE, MAX_FONT_SIZE, StyledNode};
 use crate::layout::box_tree::LayoutBox;
 
 const SKIP_TAGS: &[&str] = &[
     "head", "title", "meta", "link", "style", "script", "base", "noscript",
 ];
-const DEFAULT_FONT_SIZE: f32 = 14.0;
 const CONTENT_PADDING: f32 = 24.0;
 const CHAR_WIDTH_RATIO: f32 = 0.55;
 const LINE_HEIGHT_RATIO: f32 = 1.4;
 const BLOCK_GAP: f32 = 4.0;
 
-/// Lays out a document into stacked block boxes. Text is greedily wrapped to
-/// the available width using an approximate glyph width; no CSS is applied.
-pub fn layout(node: &Node, viewport_width: f32) -> LayoutBox {
+/// Lays out a styled document into stacked block boxes. Text is greedily
+/// wrapped to the available width using an approximate glyph width.
+pub fn layout(root: &StyledNode<'_>, viewport_width: f32) -> LayoutBox {
+    let width = if viewport_width.is_finite() && viewport_width >= 0.0 {
+        viewport_width
+    } else {
+        0.0
+    };
     let mut y = CONTENT_PADDING;
-    let mut root = layout_node(node, viewport_width, DEFAULT_FONT_SIZE, &mut y);
-    root.width = viewport_width;
-    root
+    let mut layout_root = layout_node(root, width, &mut y);
+    layout_root.width = width;
+    layout_root
 }
 
-fn layout_node(node: &Node, width: f32, font_size: f32, y: &mut f32) -> LayoutBox {
-    match node {
-        Node::Document => LayoutBox {
+fn layout_node(styled: &StyledNode<'_>, width: f32, y: &mut f32) -> LayoutBox {
+    let font_size = safe_font_size(styled.style.font_size);
+    let color = styled.style.color;
+
+    match styled.node {
+        crate::dom::node::Node::Document => LayoutBox {
             width,
             font_size,
+            color,
             ..Default::default()
         },
-        Node::Text(text) => {
+        crate::dom::node::Node::Text(text) => {
             let content_width = (width - 2.0 * CONTENT_PADDING).max(font_size);
             let line_height = font_size * LINE_HEIGHT_RATIO;
             let start = *y;
@@ -40,6 +48,7 @@ fn layout_node(node: &Node, width: f32, font_size: f32, y: &mut f32) -> LayoutBo
                         height: line_height,
                         text: Some(line),
                         font_size,
+                        color,
                         ..Default::default()
                     };
                     *y += line_height;
@@ -52,41 +61,43 @@ fn layout_node(node: &Node, width: f32, font_size: f32, y: &mut f32) -> LayoutBo
                 height: *y - start,
                 children,
                 font_size,
+                color,
                 y: start,
                 ..Default::default()
             }
         }
-        Node::Element { name, children, .. } => {
+        crate::dom::node::Node::Element { name, .. } => {
             if SKIP_TAGS.contains(&name.as_str()) {
                 return LayoutBox {
                     width,
                     y: *y,
                     font_size,
+                    color,
                     ..Default::default()
                 };
             }
 
             let start = *y;
-            let child_font_size = font_size_for(name, font_size);
-            let box_children = layout_children(children, width, child_font_size, y);
+            let box_children = layout_children(&styled.children, width, y);
 
             LayoutBox {
                 width,
                 height: *y - start,
                 children: box_children,
                 y: start,
-                font_size: child_font_size,
+                font_size,
+                color,
                 ..Default::default()
             }
         }
     }
 }
 
-fn layout_children(children: &[Node], width: f32, font_size: f32, y: &mut f32) -> Vec<LayoutBox> {
+fn layout_children(children: &[StyledNode<'_>], width: f32, y: &mut f32) -> Vec<LayoutBox> {
     let mut boxes = Vec::new();
 
     for child in children {
-        let layout_box = layout_node(child, width, font_size, y);
+        let layout_box = layout_node(child, width, y);
         *y += layout_box.height + BLOCK_GAP;
         if layout_box.height > 0.0 {
             boxes.push(layout_box);
@@ -96,12 +107,11 @@ fn layout_children(children: &[Node], width: f32, font_size: f32, y: &mut f32) -
     boxes
 }
 
-fn font_size_for(name: &str, inherited: f32) -> f32 {
-    match name {
-        "h1" => 24.0,
-        "h2" => 19.0,
-        "h3" => 16.0,
-        _ => inherited,
+fn safe_font_size(value: f32) -> f32 {
+    if value.is_finite() && value >= 0.0 {
+        value.min(MAX_FONT_SIZE)
+    } else {
+        DEFAULT_FONT_SIZE
     }
 }
 
@@ -117,7 +127,11 @@ fn wrap_text(text: &str, max_width: f32, font_size: f32) -> Vec<String> {
         return Vec::new();
     }
 
-    let max_chars = (max_width / (font_size * CHAR_WIDTH_RATIO)).max(1.0) as usize;
+    let max_chars = if font_size <= 0.0 {
+        usize::MAX
+    } else {
+        (max_width / (font_size * CHAR_WIDTH_RATIO)).max(1.0) as usize
+    };
     let mut lines = Vec::new();
     let mut current = String::new();
 
